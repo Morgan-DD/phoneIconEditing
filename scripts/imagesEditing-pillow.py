@@ -1,48 +1,41 @@
-from PIL import Image, ImageEnhance, ImageColor
+# import opencv2
+import cv2
 import numpy as np
-from array import *
 
-image = Image.open("D:\\Morgan\\phoneIconEditing\\images\\image1.jpg")
-image = image.convert("RGB")
-d = image.getdata()
-newImage = Image.new('RGB', (image.width,image.height))
-#image.show()
+def recolorImage(imagesToRecolor, newColor):
+    hsv = cv2.cvtColor(imagesToRecolor, cv2.IMREAD_GRAYSCALE)
+    # Define lower and upper limits of what we call "brown"
+    lower = np.array([0, 0, 25])
+    higher = np.array([0, 0, 255])
 
-newRGBColor = (255, 0, 0)
-RGBForNotBackgroud = [0, 0, 0]
-maximum = 0
-mostFrequentColor = None
-for number, color in image.getcolors():
-    if number > maximum:
-        maximum = number
-        mostFrequentColor = color
-print(mostFrequentColor)
-mostFrequentColorArray = array('i', mostFrequentColor)
-colorDiffrence = 100
-for i in (range(0, len(mostFrequentColorArray))):
-    if mostFrequentColorArray[i] > 127:
-        mostFrequentColorArray[i] = mostFrequentColorArray[i] - colorDiffrence
-    else:
-        mostFrequentColorArray[i] = mostFrequentColorArray[i] + colorDiffrence
-mostFrequentColor = tuple(mostFrequentColorArray)
+    hsv_img = cv2.cvtColor(imagesToRecolor, cv2.IMREAD_GRAYSCALE)  # rgb to hsv color space
 
-for x in range(image.width):
-    for y in range(image.height):
-        pixel = image.getpixel((x, y))
-        if pixel >= mostFrequentColor:
-            newImage.putpixel((x, y), newRGBColor)
-        else:
-            """
-            RGBForNotBackgroud[0] = newRGBColor[0] - (mostFrequentColor[0] - pixel[0])
-            RGBForNotBackgroud[1] = newRGBColor[1] - (mostFrequentColor[1] - pixel[1])
-            RGBForNotBackgroud[2] = newRGBColor[2] - (mostFrequentColor[2] - pixel[2])
-            """
-            RGBForNotBackgroud[0] = newRGBColor[0] - (mostFrequentColor[0] - pixel[0])
-            RGBForNotBackgroud[1] = newRGBColor[1] - (mostFrequentColor[1] - pixel[1])
-            RGBForNotBackgroud[2] = newRGBColor[2] - (mostFrequentColor[2] - pixel[2])
-            newImage.putpixel((x, y), tuple(RGBForNotBackgroud))
-        # Do something with the pixel value
+    s_ch = hsv_img[:, :, 1]  # Get the saturation channel
 
-# update image data
-newImage.show()
-newImage.save("geeks.jpg")
+    thesh = cv2.threshold(s_ch, 200, 3, cv2.THRESH_BINARY)[
+        1]  # Apply threshold - pixels above 5 are going to be 255, other are zeros.
+    thesh = cv2.morphologyEx(thesh, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (
+    7, 7)))  # Apply opening morphological operation for removing artifacts.
+
+    cv2.floodFill(thesh, None, seedPoint=(0, 0), newVal=128, loDiff=1,
+                  upDiff=1)  # Fill the background in thesh with the value 128 (pixel in the foreground stays 0.
+
+    imagesToRecolor[thesh == 128] = (0, 0, 255)  # Set all the pixels where thesh=128 to red.
+
+    return imagesToRecolor
+
+# Read the image
+image = cv2.imread("D:\\Morgan\\phoneIconEditing\\images\\image1.jpg")
+
+newColor = (0, 0, 255)
+
+image = recolorImage(image, newColor)
+
+cv2.imwrite('tulips_red_bg.jpg', image)  # Save the output image.
+
+cv2.imshow("color changed image", image)
+
+cv2.imwrite('output_image.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 90])
+
+cv2.waitKey(0)
+cv2.destroyAllWindows()
