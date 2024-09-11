@@ -46,16 +46,48 @@ backgroundPath = executionFolder + "\\images\\background"
 # path of output folder
 outPutPath = executionFolder + "\\output"
 
-id = 0
-for folderName in os.listdir(iconPath):
-    id+=1
-    print("[" + str(id) + "] " + folderName)
-wantedIcon = os.listdir(iconPath)[int(input("Icon type that you want to use(number): "))-1]
+# list of id of icon folder that we want to make
+wantedIcon = {}
 
-# get the icons and backgrounds path on the folders define (iconPath and backgroundPath)
-icons = list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + wantedIcon), x),os.listdir(iconPath + "\\" + wantedIcon)))
-# icons = list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\polyvalent"), x),os.listdir(iconPath + "\\polyvalent")))
-# icons += list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + osName), x),os.listdir(iconPath + "\\" + osName)))
+# list of icon path
+icons = {}
+
+# list of all icon type available (folder)
+allIconType = os.listdir(iconPath)
+
+# name of all icon type that we have chosen merge with -
+# allIconType = ""
+
+idFolder = 0
+for folderName in allIconType:
+    idFolder+=1
+    print("[" + str(idFolder) + "] " + folderName + "(" + str(len(os.listdir(iconPath + "\\" + folderName))) + " icons)")
+stayOnWhile = True
+while stayOnWhile:
+    stayOnWhile = False
+    print("\r", end='', flush=True)
+    print("Icon type that you want to use(number): ", end='', flush=True)
+    wantedIcon = input()
+    answerIsRight = True
+
+    for wantedIconId in wantedIcon.split(" "):
+        if not wantedIconId.isdigit() or wantedIconId == " " or wantedIconId == "" or int(wantedIconId) > len(allIconType):
+            stayOnWhile = True
+
+
+for singelWantedIcon in wantedIcon.split(" "):
+    if allIconType == "":
+        allIconType = allIconType[int(singelWantedIcon)-1]
+    else:
+        allIconType += "-" + allIconType[int(singelWantedIcon) - 1]
+    if len(icons) == 0:
+        icons = list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singelWantedIcon)-1]), x),
+                         os.listdir(iconPath + "\\" + allIconType[int(singelWantedIcon)-1])))
+    else:
+        icons += list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singelWantedIcon)-1]), x),
+                         os.listdir(iconPath + "\\" + allIconType[int(singelWantedIcon)-1])))
+
+# list of backgrounds
 backgrounds = os.listdir(backgroundPath)
 
 # if True we use the background image, else we use a background color
@@ -210,6 +242,7 @@ def complementary(r, g, b):
 
 
 def getColorPalet(imageToGetPaletPath):
+    print("background color recovery...")
     dominant_colors = ()
     color_thief = ColorThief(imageToGetPaletPath)
 
@@ -241,7 +274,7 @@ for icon in icons:
     settings = addBackgroundToImage(icon, backgroundPath + "\\" + BackgroundUsed, useBackgroundImage,
                                     dominantColor, settings, staticSettings)
     print("\r", end='', flush=True)
-    print(str(idIcon) + "/" + str(len(icons)) + " done", end='', flush=True)
+    print(str(idIcon) + "/" + str(len(icons)) + "icons done", end='', flush=True)
 # print(dominantColor)
 # print(settings[1])
 
