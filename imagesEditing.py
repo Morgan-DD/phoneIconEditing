@@ -3,6 +3,7 @@ import colorsys
 import os
 import random
 import subprocess
+import math
 from colorsys import rgb_to_hsv, hsv_to_rgb
 from os import mkdir
 from PIL import Image
@@ -152,6 +153,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     # get the front icon
     front = Image.open(iconFullPath)
     front = front.convert("RGBA")
+    border = Image.new("RGBA",front.size, (0,0,0,0))
     # type of background (D == dark, B == Bright, a == undefined)
     BackgroundType = settings[0]
     # color of modification
@@ -197,6 +199,34 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
                 # get the precise pixel
                 pixelColor = alphaData.getpixel((x, y))
                 front.putpixel((x, y), (ModificationColor[0], ModificationColor[1], ModificationColor[2], pixelColor))
+                try:
+                    if(alphaData.getpixel((x-1, y)) == 0):
+                        border.putpixel((x-1, y), (255,0,0,pixelColor))
+                        border.putpixel((x-2, y), (255,0,0,pixelColor))
+                        border.putpixel((x-3, y), (255,0,0,pixelColor))
+                except Exception:
+                    pass
+                try:
+                    if(alphaData.getpixel((x+1, y)) == 0):
+                        border.putpixel((x+1, y), (255,0,0,pixelColor))
+                        border.putpixel((x+2, y), (255,0,0,pixelColor))
+                        border.putpixel((x+3, y), (255,0,0,pixelColor))
+                except Exception:
+                    pass
+                try:
+                    if(alphaData.getpixel((x, y-1)) == 0):
+                        border.putpixel((x, y-1), (255,0,0,pixelColor))
+                        border.putpixel((x, y-2), (255,0,0,pixelColor))
+                        border.putpixel((x, y-3), (255,0,0,pixelColor))
+                except Exception:
+                    pass
+                try:
+                    if(alphaData.getpixel((x, y+1)) == 0):
+                        border.putpixel((x, y+1), (255,0,0,pixelColor))
+                        border.putpixel((x, y+2), (255,0,0,pixelColor))
+                        border.putpixel((x, y+3), (255,0,0,pixelColor))
+                except Exception:
+                    pass
     elif staticSettings[4] and (staticSettings[5][0] > 0 or staticSettings[5][1] > 0 or staticSettings[5][2] > 0):
         alphaData = front.split()[-1]
         for x in range(front.size[0]):
@@ -207,7 +237,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
 
     # resize the background to fit the size of the icon
     front.thumbnail((staticSettings[6],staticSettings[6]), Image.Resampling.LANCZOS)
-
+    border.thumbnail((staticSettings[6],staticSettings[6]), Image.Resampling.LANCZOS)
     # if we use the background
     if backgroundOption:
         # number of time that the background is bigger than the icon (and minimized)
@@ -241,6 +271,9 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
         back = Image.new(mode="RGB", size=(front.size[0] + margin * 2, front.size[1] + margin * 2),
                          color=colorThemeBase)
 
+
+    # Pasting border of icon image on top of background
+    back.paste(border, (margin, margin), mask=border)
     # Pasting icon image on top of background
     back.paste(front, (margin, margin), mask=front)
 
@@ -259,11 +292,12 @@ def complementary(r, g, b):
 
 
 def getColorPalet(imageToGetPaletPath):
-    print("background color recovery...")
+    print("background color recovery...", end='')
     dominant_colors = ()
     color_thief = ColorThief(imageToGetPaletPath)
 
     dominant_colors += (color_thief.get_color(quality=1))
+    print("done")
     return dominant_colors
 
 def folderCreation(outPutPath, executionDate, background, wantedIcon):
@@ -292,6 +326,7 @@ for icon in icons:
                                     dominantColor, settings, staticSettings)
     print("\r", end='', flush=True)
     print(str(idIcon) + "/" + str(len(icons)) + " icons done", end='', flush=True)
+
 # print(dominantColor)
 # print(settings[1])
 
