@@ -10,13 +10,22 @@ from colorthief import ColorThief
 from time import gmtime, strftime
 
 # margin between icon and border
-margin = 8
+margin = 15 # 15 recommended
+
+# color to recolor the icons
+replacementIconColor = (0,0,0)
+
+# size of icon
+iconSize = 100
+
+# if True, replace the color of the icon (base black)
+replaceIconColor = True
 
 # True if the background is mostly dark
 BackgroundType = "a"
 
 # name of the background wanted
-wantedBackgroundName = "Bubles"
+wantedBackgroundName = "venom"
 
 # background used
 BackgroundUsed = ""
@@ -53,20 +62,66 @@ opacityLimitForReplacement = 100
 settings = (BackgroundType, (0, 0, 0))
 
 # settings that will not change or get returned
-staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, outPutPath + "\\" + executionDate + "\\" + BackgroundUsed.split(".")[0])
-
+staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, outPutPath + "\\" + executionDate + "\\" + BackgroundUsed.split(".")[0], replaceIconColor, replacementIconColor, iconSize)
+#                  0                1             2                                                          3                                            4                5                  6
 # add a background to an icon
 # iconFullPath -> fullPath of the icon
 # backgroundFullPath -> fullPath of the background image
 def addBackgroundToImage(iconFullPath, backgroundFullPath, options, colorThemeBase, settings, staticSettings):
     # get the front icon
     front = Image.open(iconFullPath)
+    front = front.convert("RGBA")
     # type of background (D == dark, B == Bright, a == undefined)
     BackgroundType = settings[0]
     # color of modification
     ModificationColor = settings[1]
+    # more changed color
+    ModificationColor2 = (0,0,0)
     # modify color scale
     ModifyColorScale = 50
+    # get the
+    if staticSettings[4] and staticSettings[5][0] == 0 and staticSettings[5][1] == 0 and staticSettings[5][2] == 0:
+        hTheme, sTheme, vTheme = colorsys.rgb_to_hsv(colorThemeBase[0], colorThemeBase[1], colorThemeBase[2])
+        if BackgroundType == "a":
+            if vTheme > 127:
+                ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - ModifyColorScale)))
+                ModificationColor2 = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - ModifyColorScale*2)))
+            else:
+                ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme + ModifyColorScale)))
+                ModificationColor2 = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme + ModifyColorScale * 2)))
+
+        for i in range(len(ModificationColor)):
+            if ModificationColor[i] > 255:
+                ModificationColor[i] = 254
+            if ModificationColor2[i] > 255:
+                ModificationColor2[i] = 254
+            if ModificationColor[i] < 0:
+                ModificationColor[i] = 0
+            if ModificationColor2[i] < 0:
+                ModificationColor2[i] = 0
+
+    # if we want to modify the color of the icons, and we don't have defined a new color
+    if staticSettings[4] and staticSettings[5][0] == 0 and staticSettings[5][1] == 0 and staticSettings[5][2] == 0:
+        alphaData = front.split()[-1]
+        for x in range(front.size[0]):
+            for y in range(front.size[1]):
+                pixelColor = alphaData.getpixel((x, y))
+                if pixelColor > 0:
+                    if pixelColor < staticSettings[2]:
+                        front.putpixel((x, y), ModificationColor2)
+                    else:
+                        front.putpixel((x, y), ModificationColor)
+    elif staticSettings[4] and (staticSettings[5][0] > 0 or staticSettings[5][1] > 0 or staticSettings[5][2] > 0):
+        alphaData = front.split()[-1]
+        for x in range(front.size[0]):
+            for y in range(front.size[1]):
+                pixelColor = alphaData.getpixel((x, y))
+                if pixelColor > 0:
+                    front.putpixel((x, y), staticSettings[5])
+
+    # resize the background to fit the size of the icon
+    front.thumbnail((staticSettings[6],staticSettings[6]), Image.Resampling.LANCZOS)
+
     # if we use the background
     if options.split(',')[0].upper() == "B":
         # number of time that the background is bigger than the icon (and minimized)
@@ -99,25 +154,6 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, options, colorThemeBa
     else:
         back = Image.new(mode="RGB", size=(front.size[0] + margin * 2, front.size[1] + margin * 2),
                          color=colorThemeBase)
-
-    hTheme, sTheme, vTheme = colorsys.rgb_to_hsv(colorThemeBase[0], colorThemeBase[1], colorThemeBase[2])
-    if BackgroundType == "a":
-        if vTheme > 127:
-            ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - ModifyColorScale)))
-        else:
-            ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme + ModifyColorScale)))
-
-    alphaData = front.split()[-1]
-    for x in range(front.size[0]):
-        for y in range(front.size[1]):
-            pixelColor = alphaData.getpixel((x, y))
-            if pixelColor > 0:
-                if pixelColor < staticSettings[2]:
-                    front.putpixel((x, y), (0,0,0))
-                else:
-                    front.putpixel((x, y), ModificationColor)
-            # print(str(x) + " " + str(y))
-
 
     # Pasting icon image on top of background
     back.paste(front, (margin, margin), mask=front)
