@@ -7,15 +7,18 @@ from colorsys import rgb_to_hsv, hsv_to_rgb
 from os import mkdir
 from PIL import Image
 from colorthief import ColorThief
-from time import gmtime, strftime
+from time import gmtime, strftime, perf_counter
 
 # margin between icon and border
 margin = 15 # 15 recommended
 
-# color to recolor the icons
+# os used, ios or android
+osName = "ios"
+
+# folor to recolor the icons, if (0,0,0) we use the dominantColor darker or lighter
 replacementIconColor = (0,0,0)
 
-# size of icon
+# size of icon, max is the size of the smallest icon (should be 512(px))
 iconSize = 100
 
 # if True, replace the color of the icon (base black)
@@ -43,9 +46,20 @@ backgroundPath = executionFolder + "\\images\\background"
 # path of output folder
 outPutPath = executionFolder + "\\output"
 
+id = 0
+for folderName in os.listdir(iconPath):
+    id+=1
+    print("[" + str(id) + "] " + folderName)
+wantedIcon = os.listdir(iconPath)[int(input("Icon type that you want to use(number): "))-1]
+
 # get the icons and backgrounds path on the folders define (iconPath and backgroundPath)
-icons = os.listdir(iconPath)
+icons = list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + wantedIcon), x),os.listdir(iconPath + "\\" + wantedIcon)))
+# icons = list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\polyvalent"), x),os.listdir(iconPath + "\\polyvalent")))
+# icons += list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + osName), x),os.listdir(iconPath + "\\" + osName)))
 backgrounds = os.listdir(backgroundPath)
+
+# if True we use the background image, else we use a background color
+useBackgroundImage = True
 
 for background in backgrounds:
     if wantedBackgroundName.lower() in background.lower():
@@ -55,19 +69,37 @@ for background in backgrounds:
 if BackgroundUsed == "":
     BackgroundUsed = backgrounds[0]
 
-# opacity of pixels to put black
+# opacity of pixels to put darker than the rest on the icon (border)
 opacityLimitForReplacement = 100
 
 # list of param for the generation of the icons
 settings = (BackgroundType, (0, 0, 0))
 
 # settings that will not change or get returned
-staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, outPutPath + "\\" + executionDate + "\\" + BackgroundUsed.split(".")[0], replaceIconColor, replacementIconColor, iconSize)
+staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, outPutPath + "\\" + executionDate + "\\" + BackgroundUsed.split(".")[0] + "-" + wantedIcon, replaceIconColor, replacementIconColor, iconSize)
 #                  0                1             2                                                          3                                            4                5                  6
 # add a background to an icon
 # iconFullPath -> fullPath of the icon
 # backgroundFullPath -> fullPath of the background image
-def addBackgroundToImage(iconFullPath, backgroundFullPath, options, colorThemeBase, settings, staticSettings):
+def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, colorThemeBase, settings, staticSettings):
+    """
+    :param iconFullPath: full path of the icon to paste on background
+    :param backgroundFullPath: full path of the background image
+    :param backgroundOption: if True we use the background image, else we use a background color
+    :param colorThemeBase: color theme to use on the background if image is not used
+    :param settings: list of setting that are going to change and be return at the end:
+    [0] -> type of background (D == dark, B == Bright, a == undefined)
+    [1] -> color of modification (color that is going to replace the default icon color if staticSettings[4] is True)
+    :param staticSettings: list of static settings:
+    [0] -> output path, where the output image are going to be put
+    [1] -> date of execution
+    [2] -> opacity of pixels to be darker than the rest on the icon (border)
+    [3] -> full path of the folder on the date of the execution folder on the output folder
+    [4] -> if True, replace the color of the icon (base black)
+    [5] -> color to recolor the icons, if (0,0,0) we use the colorThemeBase darker or lighter
+    [6] -> size of the icon (going to be resized)
+    :return:
+    """
     # get the front icon
     front = Image.open(iconFullPath)
     front = front.convert("RGBA")
@@ -79,17 +111,23 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, options, colorThemeBa
     ModificationColor2 = (0,0,0)
     # modify color scale
     ModifyColorScale = 50
-    # get the
+    # if we want to change the color of the icon and there is no new color define
     if staticSettings[4] and staticSettings[5][0] == 0 and staticSettings[5][1] == 0 and staticSettings[5][2] == 0:
+        # get the HSV code of the colorThemeBase(dominant color on background)
         hTheme, sTheme, vTheme = colorsys.rgb_to_hsv(colorThemeBase[0], colorThemeBase[1], colorThemeBase[2])
+        # if the type of background is undefined
         if BackgroundType == "a":
+            # if the background is dark
             if vTheme > 127:
+                # we set the color to be lighter than the background
                 ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - ModifyColorScale)))
                 ModificationColor2 = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - ModifyColorScale*2)))
+            # if the background is light
             else:
+                # we set the color to be darker if than the lighter
                 ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme + ModifyColorScale)))
                 ModificationColor2 = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme + ModifyColorScale * 2)))
-
+        # check for the replacement color to be a rgb code (>= 0 and <= 255)
         for i in range(len(ModificationColor)):
             if ModificationColor[i] > 255:
                 ModificationColor[i] = 254
@@ -102,15 +140,14 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, options, colorThemeBa
 
     # if we want to modify the color of the icons, and we don't have defined a new color
     if staticSettings[4] and staticSettings[5][0] == 0 and staticSettings[5][1] == 0 and staticSettings[5][2] == 0:
+        # get the alpha of the icon
         alphaData = front.split()[-1]
+        # check all pixels
         for x in range(front.size[0]):
             for y in range(front.size[1]):
+                # get the precise pixel
                 pixelColor = alphaData.getpixel((x, y))
-                if pixelColor > 0:
-                    if pixelColor < staticSettings[2]:
-                        front.putpixel((x, y), ModificationColor2)
-                    else:
-                        front.putpixel((x, y), ModificationColor)
+                front.putpixel((x, y), (ModificationColor[0], ModificationColor[1], ModificationColor[2], pixelColor))
     elif staticSettings[4] and (staticSettings[5][0] > 0 or staticSettings[5][1] > 0 or staticSettings[5][2] > 0):
         alphaData = front.split()[-1]
         for x in range(front.size[0]):
@@ -123,7 +160,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, options, colorThemeBa
     front.thumbnail((staticSettings[6],staticSettings[6]), Image.Resampling.LANCZOS)
 
     # if we use the background
-    if options.split(',')[0].upper() == "B":
+    if backgroundOption:
         # number of time that the background is bigger than the icon (and minimized)
         backgroundSizeToCropMulti = 10
         # get the images background and icon
@@ -179,26 +216,32 @@ def getColorPalet(imageToGetPaletPath):
     dominant_colors += (color_thief.get_color(quality=1))
     return dominant_colors
 
-def folderCreation(outPutPath, executionDate, background):
+def folderCreation(outPutPath, executionDate, background, wantedIcon):
     if not os.path.exists(outPutPath):
         mkdir(outPutPath)
     if not os.path.exists(outPutPath + "\\" + executionDate):
         mkdir(outPutPath + "\\" + executionDate)
-    if not os.path.exists(outPutPath + "\\" + executionDate + "\\" + background):
-        mkdir(outPutPath + "\\" + executionDate + "\\" + background)
+    if not os.path.exists(outPutPath + "\\" + executionDate + "\\" + background + "-" + wantedIcon):
+        mkdir(outPutPath + "\\" + executionDate + "\\" + background + "-" + wantedIcon)
 
 
 # dominant color of the background
 dominantColor = getColorPalet(backgroundPath + "\\" + BackgroundUsed)
 
 # create folder that doesn't exist
-folderCreation(outPutPath, executionDate, BackgroundUsed.split(".")[0])
+folderCreation(outPutPath, executionDate, BackgroundUsed.split(".")[0], wantedIcon)
+
+# number of icon to make
+idIcon = 0
 
 # check all icons
 for icon in icons:
+    idIcon+=1
     # generate background for all icons
-    settings = addBackgroundToImage(iconPath + "\\" + icon, backgroundPath + "\\" + BackgroundUsed, "B,R",
+    settings = addBackgroundToImage(icon, backgroundPath + "\\" + BackgroundUsed, useBackgroundImage,
                                     dominantColor, settings, staticSettings)
+    print("\r", end='', flush=True)
+    print(str(idIcon) + "/" + str(len(icons)) + " done", end='', flush=True)
 # print(dominantColor)
 # print(settings[1])
 
@@ -208,12 +251,3 @@ dominantColorImage = Image.new(mode="RGB", size=(500, 500),
                                color=dominantColor)
 
 subprocess.run(['explorer.exe', staticSettings[3]])
-
-# Image.open(dominantColor).show()
-
-# dominantColorImage.show(title="dominantColorImage")
-# newColorIMage.show(title="newColorIMage")
-
-# print(complementary(160, 32, 240))
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
