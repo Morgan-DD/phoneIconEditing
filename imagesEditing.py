@@ -15,6 +15,9 @@ margin = 15 # 15 recommended
 # os used, ios or android
 osName = "ios"
 
+# if True, use the background, else use a color
+useBackgroundImage = True
+
 # folor to recolor the icons, if (0,0,0) we use the dominantColor darker or lighter
 replacementIconColor = (0,0,0)
 
@@ -58,6 +61,7 @@ allIconType = os.listdir(iconPath)
 # name of all the icon type used linked by -
 allIconTypeNameMerged = ""
 
+# write all the icons type available with the number of icon for each type
 idFolder = 0
 for folderName in allIconType:
     idFolder+=1
@@ -66,7 +70,7 @@ stayOnWhile = True
 while stayOnWhile:
     stayOnWhile = False
     print("\r", end='', flush=True)
-    print("Icon type that you want to use(number): ", end='', flush=True)
+    print("Icon type that you want to use , you can add multiple with space between them(number): ", end='', flush=True)
     wantedIcon = input()
     answerIsRight = True
 
@@ -89,11 +93,25 @@ for singelWantedIcon in wantedIcon.split(" "):
 # list of backgrounds
 backgrounds = os.listdir(backgroundPath)
 
-# if True we use the background image, else we use a background color
-useBackgroundImage = True
+# background choose on the background list
+wantedBackground = ""
+
+idBackground = 0
+for backgroundName in backgrounds:
+    idBackground+=1
+    print("[" + str(idBackground) + "] " + backgroundName.split(".")[0])
+stayOnWhile = True
+while stayOnWhile:
+    stayOnWhile = False
+    print("\r", end='', flush=True)
+    print("background type that you want to use(number): ", end='', flush=True)
+    wantedBackground = input()
+    answerIsRight = True
+    if not wantedBackground.isdigit() or wantedBackground == " " or wantedBackground == "" or int(wantedBackground) > len(backgrounds):
+            stayOnWhile = True
 
 for background in backgrounds:
-    if wantedBackgroundName.lower() in background.lower():
+    if backgrounds[int(wantedBackground)-1].lower() in background.lower():
         # background used
         BackgroundUsed = background
 
