@@ -55,8 +55,8 @@ icons = {}
 # list of all icon type available (folder)
 allIconType = os.listdir(iconPath)
 
-# name of all icon type that we have chosen merge with -
-# allIconType = ""
+# name of all the icon type used linked by -
+allIconTypeNameMerged = ""
 
 idFolder = 0
 for folderName in allIconType:
@@ -74,12 +74,11 @@ while stayOnWhile:
         if not wantedIconId.isdigit() or wantedIconId == " " or wantedIconId == "" or int(wantedIconId) > len(allIconType):
             stayOnWhile = True
 
-
 for singelWantedIcon in wantedIcon.split(" "):
-    if allIconType == "":
-        allIconType = allIconType[int(singelWantedIcon)-1]
+    if allIconTypeNameMerged == "":
+        allIconTypeNameMerged = allIconType[int(singelWantedIcon)-1]
     else:
-        allIconType += "-" + allIconType[int(singelWantedIcon) - 1]
+        allIconTypeNameMerged += "-" + allIconType[int(singelWantedIcon) - 1]
     if len(icons) == 0:
         icons = list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singelWantedIcon)-1]), x),
                          os.listdir(iconPath + "\\" + allIconType[int(singelWantedIcon)-1])))
@@ -108,7 +107,7 @@ opacityLimitForReplacement = 100
 settings = (BackgroundType, (0, 0, 0))
 
 # settings that will not change or get returned
-staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, outPutPath + "\\" + executionDate + "\\" + BackgroundUsed.split(".")[0] + "-" + wantedIcon, replaceIconColor, replacementIconColor, iconSize)
+staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, outPutPath + "\\" + executionDate + "\\" + BackgroundUsed.split(".")[0] + "_" + allIconTypeNameMerged, replaceIconColor, replacementIconColor, iconSize)
 #                  0                1             2                                                          3                                            4                5                  6
 # add a background to an icon
 # iconFullPath -> fullPath of the icon
@@ -255,14 +254,14 @@ def folderCreation(outPutPath, executionDate, background, wantedIcon):
     if not os.path.exists(outPutPath + "\\" + executionDate):
         mkdir(outPutPath + "\\" + executionDate)
     if not os.path.exists(outPutPath + "\\" + executionDate + "\\" + background + "-" + wantedIcon):
-        mkdir(outPutPath + "\\" + executionDate + "\\" + background + "-" + wantedIcon)
+        mkdir(outPutPath + "\\" + executionDate + "\\" + background + "_" + wantedIcon)
 
 
 # dominant color of the background
 dominantColor = getColorPalet(backgroundPath + "\\" + BackgroundUsed)
 
 # create folder that doesn't exist
-folderCreation(outPutPath, executionDate, BackgroundUsed.split(".")[0], wantedIcon)
+folderCreation(outPutPath, executionDate, BackgroundUsed.split(".")[0], allIconTypeNameMerged)
 
 # number of icon to make
 idIcon = 0
@@ -274,7 +273,7 @@ for icon in icons:
     settings = addBackgroundToImage(icon, backgroundPath + "\\" + BackgroundUsed, useBackgroundImage,
                                     dominantColor, settings, staticSettings)
     print("\r", end='', flush=True)
-    print(str(idIcon) + "/" + str(len(icons)) + "icons done", end='', flush=True)
+    print(str(idIcon) + "/" + str(len(icons)) + " icons done", end='', flush=True)
 # print(dominantColor)
 # print(settings[1])
 
