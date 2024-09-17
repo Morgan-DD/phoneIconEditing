@@ -62,61 +62,90 @@ allIconType = os.listdir(iconPath)
 # name of all the icon type used linked by -
 allIconTypeNameMerged = ""
 
-# write all the icons type available with the number of icon for each type
-idFolder = 0
-for folderName in allIconType:
-    idFolder+=1
-    print("[" + str(idFolder) + "] " + folderName + "(" + str(len(os.listdir(iconPath + "\\" + folderName))) + " icons)")
-stayOnWhile = True
-while stayOnWhile:
-    stayOnWhile = False
-    print("\r", end='', flush=True)
-    print("Icon type that you want to use , you can add multiple with space between them(number): ", end='', flush=True)
-    wantedIcon = input()
-    answerIsRight = True
+# if there is more than 1 icon type available
+if len(allIconType) > 1:
+    # write all the icons type available with the number of icon for each type
+    idFolder = 0
+    for folderName in allIconType:
+        idFolder += 1
+        # write the name of the folder and the number of icons in that folder
+        print("[" + str(idFolder) + "] " + folderName + "(" + str(len(os.listdir(iconPath + "\\" + folderName))) + " icons)")
+    # variable used for the loop
+    stayOnWhile = True
+    while stayOnWhile:
+        # set value to exit the while
+        stayOnWhile = False
+        # print a line for asking the user an answer
+        print("\r", end='', flush=True)
+        print("Icon type that you want to use, you can add multiple with space between them(number): ", end='', flush=True)
+        wantedIcon = input()
+        answerIsRight = True
+        # foreach the answers (split by space " ")
+        for wantedIconId in wantedIcon.split(" "):
+            # if the answer is not and number or a bigger number than the length of the icon folder list
+            if not wantedIconId.isdigit() or wantedIconId == " " or wantedIconId == "" or int(wantedIconId) > len(allIconType):
+                # we stay on the while
+                stayOnWhile = True
 
-    for wantedIconId in wantedIcon.split(" "):
-        if not wantedIconId.isdigit() or wantedIconId == " " or wantedIconId == "" or int(wantedIconId) > len(allIconType):
-            stayOnWhile = True
-
-for singelWantedIcon in wantedIcon.split(" "):
-    if allIconTypeNameMerged == "":
-        allIconTypeNameMerged = allIconType[int(singelWantedIcon)-1]
-    else:
-        allIconTypeNameMerged += "-" + allIconType[int(singelWantedIcon) - 1]
-    if len(icons) == 0:
-        icons = list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singelWantedIcon)-1]), x),
-                         os.listdir(iconPath + "\\" + allIconType[int(singelWantedIcon)-1])))
-    else:
-        icons += list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singelWantedIcon)-1]), x),
-                         os.listdir(iconPath + "\\" + allIconType[int(singelWantedIcon)-1])))
-
+    #  |--| this part is used to generate the name of output folder name with the type of icons used |--|
+    #  foreach the answers (split by space " ")
+    for singelWantedIcon in wantedIcon.split(" "):
+        # if the name is empty
+        if allIconTypeNameMerged == "":
+            # we add the name of the first icon type to the name
+            allIconTypeNameMerged = allIconType[int(singelWantedIcon)-1]
+        # if the name is already started
+        else:
+            # we add "-" and the name of the icon type
+            allIconTypeNameMerged += "-" + allIconType[int(singelWantedIcon) - 1]
+        # if the list of icon type used is empty
+        if len(icons) == 0:
+            # we define the list with the value of this icon type
+            icons = list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singelWantedIcon)-1]), x),
+                             os.listdir(iconPath + "\\" + allIconType[int(singelWantedIcon)-1])))
+        # if the list of icon type used is NOT empty
+        else:
+            # we add the values for this icon type
+            icons += list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singelWantedIcon)-1]), x),
+                             os.listdir(iconPath + "\\" + allIconType[int(singelWantedIcon)-1])))
+# if there is only 1 icon type available
+else:
+    # we define the list with the value of the only icon type
+    icons = list(
+        map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(0) - 1]), x),
+            os.listdir(iconPath + "\\" + allIconType[0])))
 # list of backgrounds
 backgrounds = os.listdir(backgroundPath)
 
 # background choose on the background list
 wantedBackground = ""
-
-idBackground = 0
-for backgroundName in backgrounds:
-    idBackground+=1
-    print("[" + str(idBackground) + "] " + backgroundName.split(".")[0])
-stayOnWhile = True
-while stayOnWhile:
-    stayOnWhile = False
-    print("\r", end='', flush=True)
-    print("background type that you want to use(number): ", end='', flush=True)
-    wantedBackground = input()
-    answerIsRight = True
-    if not wantedBackground.isdigit() or wantedBackground == " " or wantedBackground == "" or int(wantedBackground) > len(backgrounds):
-            stayOnWhile = True
-
-for background in backgrounds:
-    if backgrounds[int(wantedBackground)-1].lower() in background.lower():
-        # background used
-        BackgroundUsed = background
-
-if BackgroundUsed == "":
+# if there is more than 1 background
+if len(backgrounds) > 1:
+    # write all the background available (name of the file without extension)
+    idBackground = 0
+    # foreach on all the backgrounds
+    for backgroundName in backgrounds:
+        idBackground+=1
+        # display the background's name
+        print("[" + str(idBackground) + "] " + backgroundName.split(".")[0])
+    # variable used for the loop
+    stayOnWhile = True
+    while stayOnWhile:
+        # set value to exit the while
+        stayOnWhile = False
+        # print a line for asking the user an answer
+        print("\r", end='', flush=True)
+        print("background type that you want to use(number): ", end='', flush=True)
+        wantedBackground = input()
+        answerIsRight = True
+        # if the answer is not a number or if the number is bigger than the length of the background list
+        if not wantedBackground.isdigit() or wantedBackground == " " or wantedBackground == "" or int(wantedBackground) > len(backgrounds):
+                stayOnWhile = True
+    # set the background used to the one that the user chose
+    BackgroundUsed = backgrounds[int(wantedBackground)-1].lower()
+# if there is only 1 background
+else:
+    # we set this background
     BackgroundUsed = backgrounds[0]
 
 # opacity of pixels to put darker than the rest on the icon (border)
