@@ -19,7 +19,7 @@ osName = "ios"
 # if True, use the background, else use a color
 useBackgroundImage = True
 
-# folor to recolor the icons, if (0,0,0) we use the dominantColor darker or lighter
+# color to recolor the icons, if (0,0,0) we use the dominantColor darker or lighter
 replacementIconColor = (0,0,0)
 
 # size of icon, max is the size of the smallest icon (should be 512(px))
@@ -89,25 +89,25 @@ if len(allIconType) > 1:
 
     #  |--| this part is used to generate the name of output folder name with the type of icons used |--|
     #  foreach the answers (split by space " ")
-    for singelWantedIcon in wantedIcon.split(" "):
+    for singleWantedIcon in wantedIcon.split(" "):
         # if the name is empty
         if allIconTypeNameMerged == "":
             # we add the name of the first icon type to the name
-            allIconTypeNameMerged = allIconType[int(singelWantedIcon)-1]
+            allIconTypeNameMerged = allIconType[int(singleWantedIcon) - 1]
         # if the name is already started
         else:
             # we add "-" and the name of the icon type
-            allIconTypeNameMerged += "-" + allIconType[int(singelWantedIcon) - 1]
+            allIconTypeNameMerged += "-" + allIconType[int(singleWantedIcon) - 1]
         # if the list of icon type used is empty
         if len(icons) == 0:
             # we define the list with the value of this icon type
-            icons = list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singelWantedIcon)-1]), x),
-                             os.listdir(iconPath + "\\" + allIconType[int(singelWantedIcon)-1])))
+            icons = list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1]), x),
+                             os.listdir(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1])))
         # if the list of icon type used is NOT empty
         else:
             # we add the values for this icon type
-            icons += list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singelWantedIcon)-1]), x),
-                             os.listdir(iconPath + "\\" + allIconType[int(singelWantedIcon)-1])))
+            icons += list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1]), x),
+                              os.listdir(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1])))
 # if there is only 1 icon type available
 else:
     # we define the list with the value of the only icon type
@@ -160,16 +160,16 @@ staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, outPutP
 # add a background to an icon
 # iconFullPath -> fullPath of the icon
 # backgroundFullPath -> fullPath of the background image
-def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, colorThemeBase, settings, staticSettings):
+def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, colorThemeBase, _settings, _staticSettings):
     """
     :param iconFullPath: full path of the icon to paste on background
     :param backgroundFullPath: full path of the background image
     :param backgroundOption: if True we use the background image, else we use a background color
     :param colorThemeBase: color theme to use on the background if image is not used
-    :param settings: list of setting that are going to change and be return at the end:
+    :param _settings: list of setting that are going to change and be return at the end:
     [0] -> type of background (D == dark, B == Bright, a == undefined)
-    [1] -> color of modification (color that is going to replace the default icon color if staticSettings[4] is True)
-    :param staticSettings: list of static settings:
+    [1] -> color of modification (color that is going to replace the default icon color if _staticSettings[4] is True)
+    :param _staticSettings: list of static settings:
     [0] -> output path, where the output image are going to be put
     [1] -> date of execution
     [2] -> opacity of pixels to be darker than the rest on the icon (border)
@@ -184,19 +184,19 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     front = front.convert("RGBA")
     border = Image.new("RGBA",front.size, (0,0,0,0))
     # type of background (D == dark, B == Bright, a == undefined)
-    BackgroundType = settings[0]
+    _backgroundType = _settings[0]
     # color of modification
-    ModificationColor = settings[1]
+    ModificationColor = _settings[1]
     # more changed color
     ModificationColor2 = (0,0,0)
     # modify color scale
     ModifyColorScale = 50
     # if we want to change the color of the icon and there is no new color define
-    if staticSettings[4] and staticSettings[5][0] == 0 and staticSettings[5][1] == 0 and staticSettings[5][2] == 0:
+    if _staticSettings[4] and _staticSettings[5][0] == 0 and _staticSettings[5][1] == 0 and _staticSettings[5][2] == 0:
         # get the HSV code of the colorThemeBase(dominant color on background)
         hTheme, sTheme, vTheme = colorsys.rgb_to_hsv(colorThemeBase[0], colorThemeBase[1], colorThemeBase[2])
         # if the type of background is undefined
-        if BackgroundType == "a":
+        if _backgroundType == "a":
             # if the background is dark
             if vTheme > 127:
                 # we set the color to be lighter than the background
@@ -204,7 +204,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
                 ModificationColor2 = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - ModifyColorScale*2)))
             # if the background is light
             else:
-                # we set the color to be darker if than the lighter
+                # we set the color to be darker if than the background
                 ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme + ModifyColorScale)))
                 ModificationColor2 = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme + ModifyColorScale * 2)))
         # check for the replacement color to be a rgb code (>= 0 and <= 255)
@@ -219,54 +219,54 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
                 ModificationColor2[i] = 0
 
     # if we want to modify the color of the icons, and we don't have defined a new color
-    if staticSettings[4] and staticSettings[5][0] == 0 and staticSettings[5][1] == 0 and staticSettings[5][2] == 0:
+    if _staticSettings[4] and _staticSettings[5][0] == 0 and _staticSettings[5][1] == 0 and _staticSettings[5][2] == 0:
         # get the alpha of the icon
         alphaData = front.split()[-1]
         # check all pixels
         for x in range(front.size[0]):
             for y in range(front.size[1]):
                 # get the precise pixel
-                pixelColor = alphaData.getpixel((x, y))
+                pixelColor = int(alphaData.getpixel((x, y)))
                 front.putpixel((x, y), (ModificationColor[0], ModificationColor[1], ModificationColor[2], pixelColor))
                 try:
-                    if(alphaData.getpixel((x-1, y)) == 0):
+                    if alphaData.getpixel((x-1, y)) == 0:
                         border.putpixel((x-1, y), (255,0,0,pixelColor))
                         border.putpixel((x-2, y), (255,0,0,pixelColor))
                         border.putpixel((x-3, y), (255,0,0,pixelColor))
                 except Exception:
                     pass
                 try:
-                    if(alphaData.getpixel((x+1, y)) == 0):
+                    if alphaData.getpixel((x+1, y)) == 0:
                         border.putpixel((x+1, y), (255,0,0,pixelColor))
                         border.putpixel((x+2, y), (255,0,0,pixelColor))
                         border.putpixel((x+3, y), (255,0,0,pixelColor))
                 except Exception:
                     pass
                 try:
-                    if(alphaData.getpixel((x, y-1)) == 0):
+                    if alphaData.getpixel((x, y-1)) == 0:
                         border.putpixel((x, y-1), (255,0,0,pixelColor))
                         border.putpixel((x, y-2), (255,0,0,pixelColor))
                         border.putpixel((x, y-3), (255,0,0,pixelColor))
                 except Exception:
                     pass
                 try:
-                    if(alphaData.getpixel((x, y+1)) == 0):
+                    if alphaData.getpixel((x, y+1)) == 0:
                         border.putpixel((x, y+1), (255,0,0,pixelColor))
                         border.putpixel((x, y+2), (255,0,0,pixelColor))
                         border.putpixel((x, y+3), (255,0,0,pixelColor))
                 except Exception:
                     pass
-    elif staticSettings[4] and (staticSettings[5][0] > 0 or staticSettings[5][1] > 0 or staticSettings[5][2] > 0):
+    elif _staticSettings[4] and (_staticSettings[5][0] > 0 or _staticSettings[5][1] > 0 or _staticSettings[5][2] > 0):
         alphaData = front.split()[-1]
         for x in range(front.size[0]):
             for y in range(front.size[1]):
                 pixelColor = alphaData.getpixel((x, y))
                 if pixelColor > 0:
-                    front.putpixel((x, y), staticSettings[5])
+                    front.putpixel((x, y), _staticSettings[5])
 
     # resize the background to fit the size of the icon
-    front.thumbnail((staticSettings[6],staticSettings[6]), Image.Resampling.LANCZOS)
-    border.thumbnail((staticSettings[6],staticSettings[6]), Image.Resampling.LANCZOS)
+    front.thumbnail((_staticSettings[6],_staticSettings[6]), Image.Resampling.LANCZOS)
+    border.thumbnail((_staticSettings[6],_staticSettings[6]), Image.Resampling.LANCZOS)
     # if we use the background
     if backgroundOption:
         # number of time that the background is bigger than the icon (and minimized)
@@ -308,10 +308,9 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
 
     # Displaying the image
     # back.show()
-    back.save(staticSettings[3] + "\\" + iconFullPath.split("\\")[-1])
+    back.save(_staticSettings[3] + "\\" + iconFullPath.split("\\")[-1])
 
-    return BackgroundType, ModificationColor
-
+    return _backgroundType, ModificationColor
 
 
 def complementary(r, g, b):
@@ -329,13 +328,13 @@ def getColorPalet(imageToGetPaletPath):
     print("done")
     return dominant_colors
 
-def folderCreation(outPutPath, executionDate, background, wantedIcon):
-    if not os.path.exists(outPutPath):
-        mkdir(outPutPath)
-    if not os.path.exists(outPutPath + "\\" + executionDate):
-        mkdir(outPutPath + "\\" + executionDate)
-    if not os.path.exists(outPutPath + "\\" + executionDate + "\\" + background + "-" + wantedIcon):
-        mkdir(outPutPath + "\\" + executionDate + "\\" + background + "_" + wantedIcon)
+def folderCreation(_outPutPath, _executionDate, background, _wantedIcon):
+    if not os.path.exists(_outPutPath):
+        mkdir(_outPutPath)
+    if not os.path.exists(_outPutPath + "\\" + _executionDate):
+        mkdir(_outPutPath + "\\" + _executionDate)
+    if not os.path.exists(_outPutPath + "\\" + _executionDate + "\\" + background + "-" + _wantedIcon):
+        mkdir(_outPutPath + "\\" + _executionDate + "\\" + background + "_" + _wantedIcon)
 
 
 # dominant color of the background
