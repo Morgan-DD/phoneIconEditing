@@ -179,10 +179,12 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     [6] -> size of the icon (going to be resized)
     :return:
     """
+    # thickness of the borders (px)
+    BordersThickness = 3
     # get the front icon
     front = Image.open(iconFullPath)
     front = front.convert("RGBA")
-    border = Image.new("RGBA",front.size, (0,0,0,0))
+    border = Image.new("RGBA",(front.size[0]+(BordersThickness*2),front.size[1]+(BordersThickness*2)), (0,0,0,0))
     # type of background (D == dark, B == Bright, a == undefined)
     _backgroundType = _settings[0]
     # color of modification
@@ -229,31 +231,27 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
                 pixelColor = int(alphaData.getpixel((x, y)))
                 front.putpixel((x, y), (ModificationColor[0], ModificationColor[1], ModificationColor[2], pixelColor))
                 try:
-                    if alphaData.getpixel((x-1, y)) == 0:
-                        border.putpixel((x-1, y), (255,0,0,pixelColor))
-                        border.putpixel((x-2, y), (255,0,0,pixelColor))
-                        border.putpixel((x-3, y), (255,0,0,pixelColor))
+                    if (alphaData.getpixel((x-1, y)) == 0 or x-1 < 0) and alphaData.getpixel((x, y)) > 0:
+                        for i1 in range(BordersThickness):
+                            border.putpixel((x-i1+BordersThickness, y+BordersThickness), (0,255,0,255)) # (255,0,0,pixelColor))
                 except Exception:
                     pass
                 try:
-                    if alphaData.getpixel((x+1, y)) == 0:
-                        border.putpixel((x+1, y), (255,0,0,pixelColor))
-                        border.putpixel((x+2, y), (255,0,0,pixelColor))
-                        border.putpixel((x+3, y), (255,0,0,pixelColor))
+                    if (alphaData.getpixel((x+1, y)) == 0 or x+1 > front.size[0]) and alphaData.getpixel((x, y)) > 0:
+                        for i2 in range(BordersThickness):
+                            border.putpixel((x+i2+BordersThickness, y+BordersThickness), (0,255,0,255)) # (255,0,0,pixelColor))
                 except Exception:
                     pass
                 try:
-                    if alphaData.getpixel((x, y-1)) == 0:
-                        border.putpixel((x, y-1), (255,0,0,pixelColor))
-                        border.putpixel((x, y-2), (255,0,0,pixelColor))
-                        border.putpixel((x, y-3), (255,0,0,pixelColor))
+                    if (alphaData.getpixel((x, y-1)) == 0 or y-1 < 0) and alphaData.getpixel((x, y)) > 0:
+                        for i3 in range(BordersThickness):
+                            border.putpixel((x+BordersThickness, y-i3+BordersThickness), (0,255,0,255)) # (255,0,0,pixelColor))
                 except Exception:
                     pass
                 try:
-                    if alphaData.getpixel((x, y+1)) == 0:
-                        border.putpixel((x, y+1), (255,0,0,pixelColor))
-                        border.putpixel((x, y+2), (255,0,0,pixelColor))
-                        border.putpixel((x, y+3), (255,0,0,pixelColor))
+                    if (alphaData.getpixel((x, y+1)) == 0 or y+1) and alphaData.getpixel((x, y)) > 0:
+                        for i4 in range(BordersThickness):
+                            border.putpixel((x+BordersThickness, y+i4+BordersThickness), (0,255,0,255)) # (255,0,0,pixelColor))
                 except Exception:
                     pass
     elif _staticSettings[4] and (_staticSettings[5][0] > 0 or _staticSettings[5][1] > 0 or _staticSettings[5][2] > 0):
