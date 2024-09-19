@@ -8,9 +8,13 @@ from os import mkdir
 from PIL import Image
 from colorthief import ColorThief
 from time import localtime, strftime
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
 
 # margin between icon and border
-margin = 15 # 15 recommended
+margin = 15  # 15 recommended
 
 # os used, ios or android
 osName = "ios"
@@ -19,13 +23,16 @@ osName = "ios"
 useBackgroundImage = True
 
 # color to recolor the icons, if (0,0,0) we use the dominantColor darker or lighter
-replacementIconColor = (0,0,0)
+replacementIconColor = (0, 0, 0)
 
 # size of icon, max is the size of the smallest icon (should be 512(px))
 iconSize = 100
 
 # if True, replace the color of the icon (base black)
 replaceIconColor = True
+
+# if True, we add border to the icon
+addBorderToIcon = False
 
 # True if the background is mostly dark
 BackgroundType = "a"
@@ -68,7 +75,8 @@ if len(allIconType) > 1:
     for folderName in allIconType:
         idFolder += 1
         # write the name of the folder and the number of icons in that folder
-        print("[" + str(idFolder) + "] " + folderName + "(" + str(len(os.listdir(iconPath + "\\" + folderName))) + " icons)")
+        print("[" + str(idFolder) + "] " + folderName + "(" + str(
+            len(os.listdir(iconPath + "\\" + folderName))) + " icons)")
     # variable used for the loop
     stayOnWhile = True
     while stayOnWhile:
@@ -76,13 +84,15 @@ if len(allIconType) > 1:
         stayOnWhile = False
         # print a line for asking the user an answer
         print("\r", end='', flush=True)
-        print("Icon type that you want to use, you can add multiple with space between them(number): ", end='', flush=True)
+        print("Icon type that you want to use, you can add multiple with space between them(number): ", end='',
+              flush=True)
         wantedIcon = input()
         answerIsRight = True
         # foreach the answers (split by space " ")
         for wantedIconId in wantedIcon.split(" "):
             # if the answer is not and number or a bigger number than the length of the icon folder list
-            if not wantedIconId.isdigit() or wantedIconId == " " or wantedIconId == "" or int(wantedIconId) > len(allIconType):
+            if not wantedIconId.isdigit() or wantedIconId == " " or wantedIconId == "" or int(wantedIconId) > len(
+                    allIconType):
                 # we stay on the while
                 stayOnWhile = True
 
@@ -100,13 +110,17 @@ if len(allIconType) > 1:
         # if the list of icon type used is empty
         if len(icons) == 0:
             # we define the list with the value of this icon type
-            icons = list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1]), x),
-                             os.listdir(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1])))
+            icons = list(
+                map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1]),
+                                           x),
+                    os.listdir(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1])))
         # if the list of icon type used is NOT empty
         else:
             # we add the values for this icon type
-            icons += list(map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1]), x),
-                              os.listdir(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1])))
+            icons += list(
+                map(lambda x: os.path.join(os.path.abspath(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1]),
+                                           x),
+                    os.listdir(iconPath + "\\" + allIconType[int(singleWantedIcon) - 1])))
 # if there is only 1 icon type available
 else:
     # we define the list with the value of the only icon type
@@ -124,7 +138,7 @@ if len(backgrounds) > 1:
     idBackground = 0
     # foreach on all the backgrounds
     for backgroundName in backgrounds:
-        idBackground+=1
+        idBackground += 1
         # display the background's name
         print("[" + str(idBackground) + "] " + backgroundName.split(".")[0])
     # variable used for the loop
@@ -138,10 +152,11 @@ if len(backgrounds) > 1:
         wantedBackground = input()
         answerIsRight = True
         # if the answer is not a number or if the number is bigger than the length of the background list
-        if not wantedBackground.isdigit() or wantedBackground == " " or wantedBackground == "" or int(wantedBackground) > len(backgrounds):
-                stayOnWhile = True
+        if not wantedBackground.isdigit() or wantedBackground == " " or wantedBackground == "" or int(
+                wantedBackground) > len(backgrounds):
+            stayOnWhile = True
     # set the background used to the one that the user chose
-    BackgroundUsed = backgrounds[int(wantedBackground)-1].lower()
+    BackgroundUsed = backgrounds[int(wantedBackground) - 1].lower()
 # if there is only 1 background
 else:
     # we set this background
@@ -153,13 +168,11 @@ opacityLimitForReplacement = 100
 # list of param for the generation of the icons
 settings = (BackgroundType, (0, 0, 0))
 
-# settings that will not change or get returned
-staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, outPutPath + "\\" + executionDate + "\\" + BackgroundUsed.split(".")[0] + "_" + allIconTypeNameMerged, replaceIconColor, replacementIconColor, iconSize)
-#                  0                1             2                                                          3                                            4                5                  6
 # add a background to an icon
 # iconFullPath -> fullPath of the icon
 # backgroundFullPath -> fullPath of the background image
-def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, colorThemeBase, _settings, _staticSettings):
+def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, colorThemeBase, _settings,
+                         _staticSettings):
     """
     :param iconFullPath: full path of the icon to paste on background
     :param backgroundFullPath: full path of the background image
@@ -176,6 +189,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     [4] -> if True, replace the color of the icon (base black)
     [5] -> color to recolor the icons, if (0,0,0) we use the colorThemeBase darker or lighter
     [6] -> size of the icon (going to be resized)
+    [7] -> boolean to know if we have to add border to the icon
     :return:
     """
     # thickness of the borders (px)
@@ -183,13 +197,14 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     # get the front icon
     front = Image.open(iconFullPath)
     front = front.convert("RGBA")
-    border = Image.new("RGBA",(front.size[0]+(BordersThickness*2),front.size[1]+(BordersThickness*2)), (0,0,0,0))
+    border = Image.new("RGBA", (_staticSettings[6] + margin * 2, _staticSettings[6] + margin * 2),
+                       (0, 0, 0, 0))
     # type of background (D == dark, B == Bright, a == undefined)
     _backgroundType = _settings[0]
     # color of modification
     ModificationColor = _settings[1]
     # more changed color
-    ModificationColor2 = (0,0,0)
+    ModificationColor2 = (0, 0, 0)
     # modify color scale
     ModifyColorScale = 50
     # if we want to change the color of the icon and there is no new color define
@@ -202,7 +217,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
             if vTheme > 127:
                 # we set the color to be lighter than the background
                 ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - ModifyColorScale)))
-                ModificationColor2 = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - ModifyColorScale*2)))
+                ModificationColor2 = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - ModifyColorScale * 2)))
             # if the background is light
             else:
                 # we set the color to be darker if than the background
@@ -228,32 +243,41 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
             for y in range(front.size[1]):
                 # get the precise pixel
                 pixelColor = int(alphaData.getpixel((x, y)))
+
                 if pixelColor > 0:
-                    front.putpixel((x, y), (ModificationColor[0], ModificationColor[1], ModificationColor[2], 255)) # pixelColor
-                try:
-                    if (alphaData.getpixel((x-1, y)) == 0 or x-1 < 0) and alphaData.getpixel((x, y)) > 0:
-                        for i1 in range(BordersThickness):
-                            border.putpixel((x-i1+BordersThickness, y+BordersThickness), (0,255,0,255)) # (255,0,0,pixelColor))
-                except Exception:
-                    pass
-                try:
-                    if (alphaData.getpixel((x+1, y)) == 0 or x+1 > front.size[0]) and alphaData.getpixel((x, y)) > 0:
-                        for i2 in range(BordersThickness):
-                            border.putpixel((x+i2+BordersThickness, y+BordersThickness), (0,255,0,255)) # (255,0,0,pixelColor))
-                except Exception:
-                    pass
-                try:
-                    if (alphaData.getpixel((x, y-1)) == 0 or y-1 < 0) and alphaData.getpixel((x, y)) > 0:
-                        for i3 in range(BordersThickness):
-                            border.putpixel((x+BordersThickness, y-i3+BordersThickness), (0,255,0,255)) # (255,0,0,pixelColor))
-                except Exception:
-                    pass
-                try:
-                    if (alphaData.getpixel((x, y+1)) == 0 or y+1) and alphaData.getpixel((x, y)) > 0:
-                        for i4 in range(BordersThickness):
-                            border.putpixel((x+BordersThickness, y+i4+BordersThickness), (0,255,0,255)) # (255,0,0,pixelColor))
-                except Exception:
-                    pass
+                    front.putpixel((x, y), (
+                        ModificationColor[0], ModificationColor[1], ModificationColor[2], 255))  # pixelColor
+                    """
+                    try:
+                        if (alphaData.getpixel((x - 1, y)) == 0 or x - 1 < 0) and alphaData.getpixel((x, y)) > 0:
+                            for i1 in range(BordersThickness):
+                                border.putpixel((x - i1 + margin, y + margin),
+                                                (0, 255, 0, 255))  # (255,0,0,pixelColor))
+                    except Exception:
+                        pass
+                    try:
+                        if (alphaData.getpixel((x + 1, y)) == 0 or x + 1 > front.size[0]) and alphaData.getpixel(
+                                (x, y)) > 0:
+                            for i2 in range(BordersThickness):
+                                border.putpixel((x + i2 + margin, y + margin),
+                                                (0, 255, 0, 255))  # (255,0,0,pixelColor))
+                    except Exception:
+                        pass
+                    try:
+                        if (alphaData.getpixel((x, y - 1)) == 0 or y - 1 < 0) and alphaData.getpixel((x, y)) > 0:
+                            for i3 in range(BordersThickness):
+                                border.putpixel((x + margin, y - i3 + margin),
+                                                (0, 255, 0, 255))  # (255,0,0,pixelColor))
+                    except Exception:
+                        pass
+                    try:
+                        if (alphaData.getpixel((x, y + 1)) == 0 or y + 1) and alphaData.getpixel((x, y)) > 0:
+                            for i4 in range(BordersThickness):
+                                border.putpixel((x + margin, y + i4 + margin),
+                                                (0, 255, 0, 255))  # (255,0,0,pixelColor))
+                    except Exception:
+                        pass
+                    """
     elif _staticSettings[4] and (_staticSettings[5][0] > 0 or _staticSettings[5][1] > 0 or _staticSettings[5][2] > 0):
         alphaData = front.split()[-1]
         for x in range(front.size[0]):
@@ -263,8 +287,55 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
                     front.putpixel((x, y), _staticSettings[5])
 
     # resize the background to fit the size of the icon
-    front.thumbnail((_staticSettings[6],_staticSettings[6]), Image.Resampling.LANCZOS)
-    border.thumbnail((_staticSettings[6],_staticSettings[6]), Image.Resampling.LANCZOS)
+    front.thumbnail((_staticSettings[6], _staticSettings[6]), Image.Resampling.LANCZOS)
+    border.thumbnail((_staticSettings[6], _staticSettings[6]), Image.Resampling.LANCZOS)
+
+    if _staticSettings[7]:
+        open_cv_image = np.array(front)
+        # Convert RGB to BGR
+        open_cv_image = open_cv_image[:, :, ::-1].copy()
+        # Grayscale
+        gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
+
+        # Find Canny edges
+        edged = cv2.Canny(gray, 30, 200)
+        cv2.waitKey(0)
+
+        # Finding Contours
+        # Use a copy of the image e.g. edged.copy()
+        # since findContours alters the image
+        contours, hierarchy = cv2.findContours(edged,
+                                               cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+        cv2.imshow('Canny Edges After Contouring', edged)
+        cv2.waitKey(0)
+
+        print("Number of Contours found = " + str(len(contours)))
+
+        # Draw all contours
+        # -1 signifies drawing all contours
+        cv2.drawContours(image, contours, -1, (0, 255, 0), 3)
+
+        cv2.imshow('Contours', image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        """
+        open_cv_image = np.array(front)
+
+        gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
+
+        # binarize image
+        retval, bw = cv2.threshold(gray, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+
+        # find contour
+        # imgEdge, contours, hierarchy = cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        print(cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE))
+
+        plt.imshow(bw)
+        plt.show()
+        """
+        # print(len(contours))
+
     # if we use the background
     if backgroundOption:
         # number of time that the background is bigger than the icon (and minimized)
@@ -298,7 +369,6 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
         back = Image.new(mode="RGB", size=(front.size[0] + margin * 2, front.size[1] + margin * 2),
                          color=colorThemeBase)
 
-
     # Pasting border of icon image on top of background
     back.paste(border, (margin, margin), mask=border)
     # Pasting icon image on top of background
@@ -326,27 +396,44 @@ def getColorPalet(imageToGetPaletPath):
     print("done")
     return dominant_colors
 
+
 def folderCreation(_outPutPath, _executionDate, background, _wantedIcon):
+    finalOuputPath = _outPutPath + "\\" + _executionDate + "\\" + background + "-" + _wantedIcon
     if not os.path.exists(_outPutPath):
         mkdir(_outPutPath)
     if not os.path.exists(_outPutPath + "\\" + _executionDate):
         mkdir(_outPutPath + "\\" + _executionDate)
-    if not os.path.exists(_outPutPath + "\\" + _executionDate + "\\" + background + "-" + _wantedIcon):
-        mkdir(_outPutPath + "\\" + _executionDate + "\\" + background + "_" + _wantedIcon)
+    if not os.path.exists(finalOuputPath):
+        mkdir(finalOuputPath)
+    else:
+        exitWhile = True
+        id = 1
+        while exitWhile:
+            if not os.path.exists(finalOuputPath + "-" + str(id)):
+                finalOuputPath += "-" + str(id)
+                mkdir(finalOuputPath)
+                exitWhile = False
+    print("finalOuputPath: " + str(finalOuputPath))
+    return finalOuputPath
+
 
 
 # dominant color of the background
 dominantColor = getColorPalet(backgroundPath + "\\" + BackgroundUsed)
 
 # create folder that doesn't exist
-folderCreation(outPutPath, executionDate, BackgroundUsed.split(".")[0], allIconTypeNameMerged)
+ouputFullPath = folderCreation(outPutPath, executionDate, BackgroundUsed.split(".")[0], allIconTypeNameMerged)
+
+# settings that will not change or get returned
+staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, ouputFullPath, replaceIconColor, replacementIconColor, iconSize, addBorderToIcon)
+#                    0               1               2                                                                  3                                                              4                  5                 6           7
 
 # number of icon to make
 idIcon = 0
 
 # check all icons
 for icon in icons:
-    idIcon+=1
+    idIcon += 1
     # generate background for all icons
     settings = addBackgroundToImage(icon, backgroundPath + "\\" + BackgroundUsed, useBackgroundImage,
                                     dominantColor, settings, staticSettings)
@@ -361,4 +448,4 @@ newColorIMage = Image.new(mode="RGB", size=(500, 500),
 dominantColorImage = Image.new(mode="RGB", size=(500, 500),
                                color=dominantColor)
 
-subprocess.run(['explorer.exe', staticSettings[3]])
+subprocess.run(["explorer.exe", staticSettings[3]])
