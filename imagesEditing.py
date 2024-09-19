@@ -3,12 +3,11 @@ import colorsys
 import os
 import random
 import subprocess
-import math
 from colorsys import rgb_to_hsv, hsv_to_rgb
 from os import mkdir
 from PIL import Image
 from colorthief import ColorThief
-from time import gmtime, strftime, perf_counter
+from time import localtime, strftime
 
 # margin between icon and border
 margin = 15 # 15 recommended
@@ -41,7 +40,7 @@ BackgroundUsed = ""
 executionFolder = os.path.dirname(os.path.realpath(__file__))
 
 # date of execution of the script
-executionDate = strftime("%Y-%m-%d_%H-%M", gmtime())
+executionDate = strftime("%Y-%m-%d_%H-%M", localtime())
 
 # path of icons and backgrounds folder
 iconPath = executionFolder + "\\images\\icon"
@@ -180,7 +179,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     :return:
     """
     # thickness of the borders (px)
-    BordersThickness = 3
+    BordersThickness = 2
     # get the front icon
     front = Image.open(iconFullPath)
     front = front.convert("RGBA")
@@ -229,7 +228,8 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
             for y in range(front.size[1]):
                 # get the precise pixel
                 pixelColor = int(alphaData.getpixel((x, y)))
-                front.putpixel((x, y), (ModificationColor[0], ModificationColor[1], ModificationColor[2], pixelColor))
+                if pixelColor > 0:
+                    front.putpixel((x, y), (ModificationColor[0], ModificationColor[1], ModificationColor[2], 255)) # pixelColor
                 try:
                     if (alphaData.getpixel((x-1, y)) == 0 or x-1 < 0) and alphaData.getpixel((x, y)) > 0:
                         for i1 in range(BordersThickness):
