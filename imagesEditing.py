@@ -25,6 +25,9 @@ useBackgroundImage = True
 # color to recolor the icons, if (0,0,0) we use the dominantColor darker or lighter
 replacementIconColor = (0, 0, 0)
 
+# color of the border (RGBA)
+BorderColor = (255, 0, 0, 255)
+
 # size of icon, max is the size of the smallest icon (should be 512(px))
 iconSize = 100
 
@@ -32,10 +35,13 @@ iconSize = 100
 replaceIconColor = True
 
 # if True, we add border to the icon
-addBorderToIcon = False
+addBorderToIcon = True
 
 # True if the background is mostly dark
 BackgroundType = "a"
+
+# thickness of the borders bumber of border of the pixels per 100 px of the icon (1 look good, 2 ok)
+BordersThickness = 1
 
 # name of the background wanted
 wantedBackgroundName = "venom"
@@ -190,15 +196,17 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     [5] -> color to recolor the icons, if (0,0,0) we use the colorThemeBase darker or lighter
     [6] -> size of the icon (going to be resized)
     [7] -> boolean to know if we have to add border to the icon
+    [8] -> thickness of the border if there is one
+    [9] -> color of the border (RGBA)
     :return:
     """
     # thickness of the borders (px)
-    BordersThickness = 2
     # get the front icon
     front = Image.open(iconFullPath)
     front = front.convert("RGBA")
-    border = Image.new("RGBA", (_staticSettings[6] + margin * 2, _staticSettings[6] + margin * 2),
+    border = Image.new("RGBA", (front.size[0] + _staticSettings[8], front.size[1]+_staticSettings[8]),
                        (0, 0, 0, 0))
+    _BorderColor = _staticSettings[9]
     # type of background (D == dark, B == Bright, a == undefined)
     _backgroundType = _settings[0]
     # color of modification
@@ -243,10 +251,33 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
             for y in range(front.size[1]):
                 # get the precise pixel
                 pixelColor = int(alphaData.getpixel((x, y)))
-
                 if pixelColor > 0:
                     front.putpixel((x, y), (
                         ModificationColor[0], ModificationColor[1], ModificationColor[2], 255))  # pixelColor
+                    try:
+                        if int(alphaData.getpixel((x-1, y))) == 0 and pixelColor > 0:
+                            for i1 in range(_staticSettings[8] * round(border.size[0]/100)):
+                                border.putpixel((x-i1, y), _BorderColor)
+                    except Exception:
+                        pass
+                    try:
+                        if int(alphaData.getpixel((x+1, y))) == 0 and pixelColor > 0:
+                            for i2 in range(_staticSettings[8] * round(border.size[0]/100)):
+                                border.putpixel((x+i2, y), _BorderColor)
+                    except Exception:
+                        pass
+                    try:
+                        if int(alphaData.getpixel((x, y-1))) == 0 and pixelColor > 0:
+                            for i3 in range(_staticSettings[8] * round(border.size[0]/100)):
+                                border.putpixel((x, y-i3), _BorderColor)
+                    except Exception:
+                        pass
+                    try:
+                        if int(alphaData.getpixel((x, y+1))) == 0 and pixelColor > 0:
+                            for i4 in range(_staticSettings[8] * round(border.size[0]/100)):
+                                border.putpixel((x, y+i4), _BorderColor)
+                    except Exception:
+                        pass
                     """
                     try:
                         if (alphaData.getpixel((x - 1, y)) == 0 or x - 1 < 0) and alphaData.getpixel((x, y)) > 0:
@@ -286,55 +317,11 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
                 if pixelColor > 0:
                     front.putpixel((x, y), _staticSettings[5])
 
+    # Pasting border of icon image on top of background
+    front.paste(border, mask=border)
     # resize the background to fit the size of the icon
     front.thumbnail((_staticSettings[6], _staticSettings[6]), Image.Resampling.LANCZOS)
-    border.thumbnail((_staticSettings[6], _staticSettings[6]), Image.Resampling.LANCZOS)
-
-    if _staticSettings[7]:
-        open_cv_image = np.array(front)
-        # Convert RGB to BGR
-        open_cv_image = open_cv_image[:, :, ::-1].copy()
-        # Grayscale
-        gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
-
-        # Find Canny edges
-        edged = cv2.Canny(gray, 30, 200)
-        cv2.waitKey(0)
-
-        # Finding Contours
-        # Use a copy of the image e.g. edged.copy()
-        # since findContours alters the image
-        contours, hierarchy = cv2.findContours(edged,
-                                               cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-        cv2.imshow('Canny Edges After Contouring', edged)
-        cv2.waitKey(0)
-
-        print("Number of Contours found = " + str(len(contours)))
-
-        # Draw all contours
-        # -1 signifies drawing all contours
-        cv2.drawContours(image, contours, -1, (0, 255, 0), 3)
-
-        cv2.imshow('Contours', image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        """
-        open_cv_image = np.array(front)
-
-        gray = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
-
-        # binarize image
-        retval, bw = cv2.threshold(gray, 0, 1, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-
-        # find contour
-        # imgEdge, contours, hierarchy = cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        print(cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE))
-
-        plt.imshow(bw)
-        plt.show()
-        """
-        # print(len(contours))
+    # border.thumbnail((_staticSettings[6], _staticSettings[6]), Image.Resampling.LANCZOS)
 
     # if we use the background
     if backgroundOption:
@@ -368,9 +355,6 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     else:
         back = Image.new(mode="RGB", size=(front.size[0] + margin * 2, front.size[1] + margin * 2),
                          color=colorThemeBase)
-
-    # Pasting border of icon image on top of background
-    back.paste(border, (margin, margin), mask=border)
     # Pasting icon image on top of background
     back.paste(front, (margin, margin), mask=front)
 
@@ -413,7 +397,6 @@ def folderCreation(_outPutPath, _executionDate, background, _wantedIcon):
                 finalOuputPath += "-" + str(id)
                 mkdir(finalOuputPath)
                 exitWhile = False
-    print("finalOuputPath: " + str(finalOuputPath))
     return finalOuputPath
 
 
@@ -425,8 +408,8 @@ dominantColor = getColorPalet(backgroundPath + "\\" + BackgroundUsed)
 ouputFullPath = folderCreation(outPutPath, executionDate, BackgroundUsed.split(".")[0], allIconTypeNameMerged)
 
 # settings that will not change or get returned
-staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, ouputFullPath, replaceIconColor, replacementIconColor, iconSize, addBorderToIcon)
-#                    0               1               2                                                                  3                                                              4                  5                 6           7
+staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, ouputFullPath, replaceIconColor, replacementIconColor, iconSize, addBorderToIcon, BordersThickness, BorderColor)
+#                    0               1               2                      3                   4                   5                6           7              8                 9
 
 # number of icon to make
 idIcon = 0
