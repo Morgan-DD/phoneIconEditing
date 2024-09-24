@@ -35,13 +35,13 @@ iconSize = 100
 replaceIconColor = True
 
 # if True, we add border to the icon
-addBorderToIcon = False
+addBorderToIcon = True
 
 # True if the background is mostly dark
 BackgroundType = "a"
 
 # thickness of the borders bumber of border of the pixels per 100 px of the icon (1 look good, 2 ok)
-BordersThickness = 1
+BordersThickness = 2
 
 # name of the background wanted
 wantedBackgroundName = "venom"
@@ -315,7 +315,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     back.thumbnail((_staticSettings[6] + (margin * 2), _staticSettings[6] + (margin * 2)), Image.Resampling.LANCZOS)
     # border.thumbnail((_staticSettings[6], _staticSettings[6]), Image.Resampling.LANCZOS)
     # if we want to modify the color of the icons, and we don't have defined a new color
-    if _staticSettings[4] and _staticSettings[5][0] == 0 and _staticSettings[5][1] == 0 and _staticSettings[5][2] == 0:
+    if _staticSettings[4]:
         # get the alpha of the icon
         alphaData = front.split()[-1]
         # check all pixels
@@ -323,49 +323,67 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
             for y in range(front.size[1]):
                 # get the precise pixel
                 pixelColor = int(alphaData.getpixel((x, y)))
-                if pixelColor > 0:
-                    # set the new color of the pixel
-                    front.putpixel((x, y), (
-                        ModificationColor[0], ModificationColor[1], ModificationColor[2], pixelColor))  # pixelColor
-                    if _staticSettings[9] and False:
-                        try:
-                            if int(alphaData.getpixel((x - 1, y))) == 0 and pixelColor > 0:
-                                for i1 in range(_staticSettings[8]):
-                                    back.putpixel((margin - i1, margin), _BorderColor)
-                        except Exception:
-                            pass
-                        try:
-                            if int(alphaData.getpixel((x + 1, y))) == 0 and pixelColor > 0:
-                                for i2 in range(_staticSettings[8]):
-                                    back.putpixel((margin + i2, margin), _BorderColor)
-                        except Exception:
-                            pass
-                        try:
-                            if int(alphaData.getpixel((x, y - 1))) == 0 and pixelColor > 0:
-                                for i3 in range(_staticSettings[8]):
-                                    back.putpixel((margin, margin - i3), _BorderColor)
-                        except Exception:
-                            pass
-                        try:
-                            if int(alphaData.getpixel((x, y + 1))) == 0 and pixelColor > 0:
-                                for i4 in range(_staticSettings[8]):
-                                    back.putpixel((margin, margin + i4), _BorderColor)
-                        except Exception:
-                            pass
+                if pixelColor > 5:
+                    if _staticSettings[7]:
+                        pixelColor = 255
+                    if _staticSettings[5][0] == 0 and _staticSettings[5][1] == 0 and _staticSettings[5][2] == 0:
+                            # set the new color of the pixel (we keep the alpha of the pixel)
+                            front.putpixel((x, y), (
+                                ModificationColor[0], ModificationColor[1], ModificationColor[2], pixelColor))  # pixelColor
+                    else:
+                        # set the new color of the pixel (we keep the alpha of the pixel)
+                        front.putpixel((x, y),
+                                       (_staticSettings[5][0], _staticSettings[5][1], _staticSettings[5][2], pixelColor))
+                    # if we need to add borders
+                    if _staticSettings[7]:
+                        # if we are at the left border
+                        if x == 0:
+                            back.putpixel((margin + x - 1, margin + y), _BorderColor)
+                        else:
+                            if alphaData.getpixel((x - 1, y)) == 0:
+                                back.putpixel((margin + x - 1, margin + y), _BorderColor)
+                        # if we are at the right border
+                        if x < alphaData.size[0]:
+                            back.putpixel((margin + x + 1, margin + y), _BorderColor)
+                        else:
+                            if alphaData.getpixel((x + 1, y)) == 0:
+                                back.putpixel((margin + x + 1, margin + y), _BorderColor)
+                        # if we are at the top border
+                        if y == 0:
+                            back.putpixel((margin + x, margin + y - 1), _BorderColor)
+                        else:
+                            if alphaData.getpixel((x, y - 1)) == 0:
+                                back.putpixel((margin + x, margin + y - 1), _BorderColor)
+                        # if we are at the bottom border
+                        if y < alphaData.size[1]:
+                            back.putpixel((margin + x, margin + y + 1), _BorderColor)
+                        else:
+                            if alphaData.getpixel((x, y + 1)) == 0:
+                                back.putpixel((margin + x, margin + y + 1), _BorderColor)
+                # if we need to add borders
+                if _staticSettings[7]:
+                    """
+                    if x > 0 and y > 0 and x < alphaData.size[0]-1 and y < alphaData.size[1]-1:
+                        if alphaData.getpixel((x + 1, y)) > 0 and (alphaData.getpixel((x, y + 1)) > 0 or alphaData.getpixel((x - 1, y)) > 0):
+                            back.putpixel((margin + x, margin + y), _BorderColor)
+                    """
+
+    """
     elif _staticSettings[4] and (_staticSettings[5][0] > 0 or _staticSettings[5][1] > 0 or _staticSettings[5][2] > 0):
         alphaData = front.split()[-1]
         for x in range(front.size[0]):
                 for y in range(front.size[1]):
                     pixelColor = alphaData.getpixel((x, y))
                     if pixelColor > 0:
+                        # set the new color of the pixel (we keep the alpha of the pixel)
                         front.putpixel((x, y), (_staticSettings[5][0], _staticSettings[5][1], _staticSettings[5][2], pixelColor))
+    """
     # Pasting icon image on top of background
     back.paste(front, (margin, margin), mask=front)
 
     # Displaying the image
     # back.show()
     back.save(_staticSettings[3] + "\\" + iconFullPath.split("\\")[-1])
-
     return _backgroundType, ModificationColor
 
 
