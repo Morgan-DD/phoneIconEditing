@@ -52,6 +52,9 @@ BackgroundUsed = ""
 # min alpha allowed
 minAlphaAllowed = 15
 
+# modify color scale
+ModifyColorScale = 50
+
 # folder where the script is executed (and where pics are)
 executionFolder = os.path.dirname(os.path.realpath(__file__))
 
@@ -202,6 +205,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     [8] -> thickness of the border if there is one
     [9] -> color of the border (RGBA)
     [10] -> min alpha allowed
+    [11] -> modification of color for the difference of the new icon color
     :return:
     """
     # thickness of the borders (px)
@@ -215,15 +219,14 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     _backgroundType = _settings[0]
     # color of modification
     ModificationColor = _settings[1]
-    # modify color scale
-    ModifyColorScale = 50
+    _ModifyColorScale = _staticSettings[11]
     # min alpha allowed
     _minAlphaAllowed = _staticSettings[10]
     # if we want to change the color of the icon and there is no new color define
     if _staticSettings[4] and _staticSettings[5][0] == 0 and _staticSettings[5][1] == 0 and _staticSettings[5][2] == 0:
         # if the type of background is undefined
         if _backgroundType == "a":
-            ModificationColor = modifyColorLighterDarker(colorThemeBase,ModifyColorScale)
+            ModificationColor = modifyColorLighterDarker(colorThemeBase,_ModifyColorScale)
 
     # Pasting border of icon image on top of background
     # front.paste(border, mask=border)
@@ -329,22 +332,32 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     return _backgroundType, ModificationColor
 
 # change the color based on ModifyColorScale, if the color is dark -> lighter, if color is light -> darker
-def modifyColorLighterDarker(ColorToModify, ModifyColorScale):
+def modifyColorLighterDarker(ColorToModify, _ModifyColorScale, DarkOrLight=0):
     """
     :param ColorToModify: color to modify
     :param ModifyColorScale: number of modification (RGB code)
+    :param DarkOrLight:
+        0 -> default, color is pick automatically
+        1 -> we set the color to lighter
+        2 -> we set the color to darker
     :return:
     """
     # get the HSV code of the colorThemeBase(dominant color on background)
     hTheme, sTheme, vTheme = colorsys.rgb_to_hsv(ColorToModify[0], ColorToModify[1], ColorToModify[2])
     # if the background is dark
-    if vTheme > 127:
+    if vTheme > 127 and DarkOrLight == 0:
         # we set the color to be lighter than the background
-        ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - ModifyColorScale)))
+        ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - _ModifyColorScale)))
     # if the background is light
-    else:
+    elif vTheme < 127 and DarkOrLight == 0:
         # we set the color to be darker if than the background
-        ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme + ModifyColorScale)))
+        ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme + _ModifyColorScale)))
+    elif DarkOrLight == 1:
+        # we set the color to be darker if than the background
+         ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme + _ModifyColorScale)))
+    elif DarkOrLight == 2:
+         # we set the color to be lighter than the background
+        ModificationColor = tuple(map(int, hsv_to_rgb(hTheme, sTheme, vTheme - _ModifyColorScale)))
     # check for the replacement color to be a rgb code (>= 0 and <= 255)
     for i in range(len(ModificationColor)):
         if ModificationColor[i] > 255:
@@ -391,20 +404,22 @@ def folderCreation(_outPutPath, _executionDate, background, _wantedIcon):
 
 # dominant color of the background
 dominantColor = getColorPalet(backgroundPath + "\\" + BackgroundUsed)
-
+BorderColor = dominantColor
 # create folder that doesn't exist
 ouputFullPath = folderCreation(outPutPath, executionDate, BackgroundUsed.split(".")[0], allIconTypeNameMerged)
 
 # if no color is set for the border
-if BorderColor[3] == 0:
-    # we get complementary color for the replacement color of the icon
-    complementaryColor = complementary(dominantColor[0], dominantColor[1], dominantColor[2])
-    # set the value
-    BorderColor = (int(complementaryColor[0]), int(complementaryColor[1]), int(complementaryColor[2]))
+if len(BorderColor) == 4:
+    if BorderColor[3] == 0:
+        # we get complementary color for the replacement color of the icon
+        complementaryColor = complementary(dominantColor[0], dominantColor[1], dominantColor[2])
+        # set the value
+        BorderColor = modifyColorLighterDarker((int(complementaryColor[0]), int(complementaryColor[1]), int(complementaryColor[2])),
+                             ModifyColorScale)
 
 # settings that will not change or get returned
-staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, ouputFullPath, replaceIconColor, replacementIconColor, iconSize, addBorderToIcon, BordersThickness, BorderColor, minAlphaAllowed)
-#                    0               1               2                      3                   4                   5                6           7              8                 9               10
+staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, ouputFullPath, replaceIconColor, replacementIconColor, iconSize, addBorderToIcon, BordersThickness, BorderColor, minAlphaAllowed, ModifyColorScale)
+#                    0               1               2                      3                   4                   5                6           7              8                 9               10              11
 
 # number of icon to make
 idIcon = 0
