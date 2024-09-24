@@ -23,7 +23,7 @@ osName = "ios"
 useBackgroundImage = True
 
 # color to recolor the icons, if (0,0,0) we use the dominantColor darker or lighter
-replacementIconColor = (0, 0, 0)
+replacementIconColor = (0, 255, 0)
 
 # color of the border (RGBA)
 BorderColor = (255, 0, 0, 255)
@@ -309,8 +309,10 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
         back = Image.new(mode="RGB", size=(front.size[0] + margin * 2, front.size[1] + margin * 2),
                          color=colorThemeBase)
 
-    # resize the background to fit the size of the icon
+    # resize the background to the desire size
     front.thumbnail((_staticSettings[6], _staticSettings[6]), Image.Resampling.LANCZOS)
+    # resize the background to the desire size
+    back.thumbnail((_staticSettings[6] + (margin * 2), _staticSettings[6] + (margin * 2)), Image.Resampling.LANCZOS)
     # border.thumbnail((_staticSettings[6], _staticSettings[6]), Image.Resampling.LANCZOS)
     # if we want to modify the color of the icons, and we don't have defined a new color
     if _staticSettings[4] and _staticSettings[5][0] == 0 and _staticSettings[5][1] == 0 and _staticSettings[5][2] == 0:
@@ -324,8 +326,8 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
                 if pixelColor > 0:
                     # set the new color of the pixel
                     front.putpixel((x, y), (
-                        ModificationColor[0], ModificationColor[1], ModificationColor[2], 255))  # pixelColor
-                    if _staticSettings[9]:
+                        ModificationColor[0], ModificationColor[1], ModificationColor[2], pixelColor))  # pixelColor
+                    if _staticSettings[9] and False:
                         try:
                             if int(alphaData.getpixel((x - 1, y))) == 0 and pixelColor > 0:
                                 for i1 in range(_staticSettings[8]):
@@ -356,8 +358,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
                 for y in range(front.size[1]):
                     pixelColor = alphaData.getpixel((x, y))
                     if pixelColor > 0:
-                        front.putpixel((x, y), _staticSettings[5])
-
+                        front.putpixel((x, y), (_staticSettings[5][0], _staticSettings[5][1], _staticSettings[5][2], pixelColor))
     # Pasting icon image on top of background
     back.paste(front, (margin, margin), mask=front)
 
