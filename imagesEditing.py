@@ -35,7 +35,7 @@ iconSize = 100
 replaceIconColor = True
 
 # if True, we add border to the icon
-addBorderToIcon = True
+addBorderToIcon = False
 
 # True if the background is mostly dark
 BackgroundType = "a"
@@ -247,37 +247,6 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
                 ModificationColor[i] = 0
             if ModificationColor2[i] < 0:
                 ModificationColor2[i] = 0
-                """
-                try:
-                    if (alphaData.getpixel((x - 1, y)) == 0 or x - 1 < 0) and alphaData.getpixel((x, y)) > 0:
-                        for i1 in range(BordersThickness):
-                            border.putpixel((x - i1 + margin, y + margin),
-                                            (0, 255, 0, 255))  # (255,0,0,pixelColor))
-                except Exception:
-                    pass
-                try:
-                    if (alphaData.getpixel((x + 1, y)) == 0 or x + 1 > front.size[0]) and alphaData.getpixel(
-                            (x, y)) > 0:
-                        for i2 in range(BordersThickness):
-                            border.putpixel((x + i2 + margin, y + margin),
-                                            (0, 255, 0, 255))  # (255,0,0,pixelColor))
-                except Exception:
-                    pass
-                try:
-                    if (alphaData.getpixel((x, y - 1)) == 0 or y - 1 < 0) and alphaData.getpixel((x, y)) > 0:
-                        for i3 in range(BordersThickness):
-                            border.putpixel((x + margin, y - i3 + margin),
-                                            (0, 255, 0, 255))  # (255,0,0,pixelColor))
-                except Exception:
-                    pass
-                try:
-                    if (alphaData.getpixel((x, y + 1)) == 0 or y + 1) and alphaData.getpixel((x, y)) > 0:
-                        for i4 in range(BordersThickness):
-                            border.putpixel((x + margin, y + i4 + margin),
-                                            (0, 255, 0, 255))  # (255,0,0,pixelColor))
-                except Exception:
-                    pass
-                """
 
     # Pasting border of icon image on top of background
     # front.paste(border, mask=border)
@@ -366,16 +335,19 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
                         else:
                             if alphaData.getpixel((x, y + 1)) == 0:
                                 back.putpixel((margin + x, margin + y + 1), _BorderColor)
-                elif pixelColor > 0:
+                # if the pixel alpha is between 0 and _minAlphaAllowed
+                elif pixelColor > 0 and _staticSettings[7]:
+                    # if the pixel is not at the limit of the picture, used to avoid error
                     if 0 < x < alphaData.size[0] - 1 and 0 < y < alphaData.size[1] - 1:
+                        # if at least 1 of the pixel near (directly so 4 case) are icon pixels (alpha greater than _minAlphaAllowed)
                         if alphaData.getpixel((x + 1, y)) > _minAlphaAllowed or alphaData.getpixel((x - 1, y)) > _minAlphaAllowed or alphaData.getpixel((x, y - 1)) > _minAlphaAllowed or alphaData.getpixel((x, y + 1)) > _minAlphaAllowed:
+                            # we set the pixel to the border color
                             back.putpixel((margin + x, margin + y), _BorderColor) # (0, 0, 255, 255)
 
     # Pasting icon image on top of background
     back.paste(front, (margin, margin), mask=front)
 
     # Displaying the image
-    # back.show()
     back.save(_staticSettings[3] + "\\" + iconFullPath.split("\\")[-1])
     return _backgroundType, ModificationColor
 
