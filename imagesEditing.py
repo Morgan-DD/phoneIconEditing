@@ -23,7 +23,7 @@ osName = "ios"
 useBackgroundImage = True
 
 # color to recolor the icons, if (0,0,0) we use the dominantColor darker or lighter
-replacementIconColor = (0, 255, 0)
+replacementIconColor = (0, 0, 0)
 
 # color of the border (RGBA)
 BorderColor = (255, 0, 0, 255)
@@ -48,6 +48,9 @@ wantedBackgroundName = "venom"
 
 # background used
 BackgroundUsed = ""
+
+# min alpha allowed
+minAlphaAllowed = 15
 
 # folder where the script is executed (and where pics are)
 executionFolder = os.path.dirname(os.path.realpath(__file__))
@@ -198,6 +201,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     [7] -> boolean to know if we have to add border to the icon
     [8] -> thickness of the border if there is one
     [9] -> color of the border (RGBA)
+    [10] -> min alpha allowed
     :return:
     """
     # thickness of the borders (px)
@@ -215,6 +219,8 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
     ModificationColor2 = (0, 0, 0)
     # modify color scale
     ModifyColorScale = 50
+    # min alpha allowed
+    _minAlphaAllowed = _staticSettings[10]
     # if we want to change the color of the icon and there is no new color define
     if _staticSettings[4] and _staticSettings[5][0] == 0 and _staticSettings[5][1] == 0 and _staticSettings[5][2] == 0:
         # get the HSV code of the colorThemeBase(dominant color on background)
@@ -323,7 +329,7 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
             for y in range(front.size[1]):
                 # get the precise pixel
                 pixelColor = int(alphaData.getpixel((x, y)))
-                if pixelColor > 5:
+                if pixelColor > _minAlphaAllowed:
                     if _staticSettings[7]:
                         pixelColor = 255
                     if _staticSettings[5][0] == 0 and _staticSettings[5][1] == 0 and _staticSettings[5][2] == 0:
@@ -360,24 +366,11 @@ def addBackgroundToImage(iconFullPath, backgroundFullPath, backgroundOption, col
                         else:
                             if alphaData.getpixel((x, y + 1)) == 0:
                                 back.putpixel((margin + x, margin + y + 1), _BorderColor)
-                # if we need to add borders
-                if _staticSettings[7]:
-                    """
-                    if x > 0 and y > 0 and x < alphaData.size[0]-1 and y < alphaData.size[1]-1:
-                        if alphaData.getpixel((x + 1, y)) > 0 and (alphaData.getpixel((x, y + 1)) > 0 or alphaData.getpixel((x - 1, y)) > 0):
-                            back.putpixel((margin + x, margin + y), _BorderColor)
-                    """
+                elif pixelColor > 0:
+                    if 0 < x < alphaData.size[0] - 1 and 0 < y < alphaData.size[1] - 1:
+                        if alphaData.getpixel((x + 1, y)) > _minAlphaAllowed or alphaData.getpixel((x - 1, y)) > _minAlphaAllowed or alphaData.getpixel((x, y - 1)) > _minAlphaAllowed or alphaData.getpixel((x, y + 1)) > _minAlphaAllowed:
+                            back.putpixel((margin + x, margin + y), _BorderColor) # (0, 0, 255, 255)
 
-    """
-    elif _staticSettings[4] and (_staticSettings[5][0] > 0 or _staticSettings[5][1] > 0 or _staticSettings[5][2] > 0):
-        alphaData = front.split()[-1]
-        for x in range(front.size[0]):
-                for y in range(front.size[1]):
-                    pixelColor = alphaData.getpixel((x, y))
-                    if pixelColor > 0:
-                        # set the new color of the pixel (we keep the alpha of the pixel)
-                        front.putpixel((x, y), (_staticSettings[5][0], _staticSettings[5][1], _staticSettings[5][2], pixelColor))
-    """
     # Pasting icon image on top of background
     back.paste(front, (margin, margin), mask=front)
 
@@ -430,8 +423,8 @@ dominantColor = getColorPalet(backgroundPath + "\\" + BackgroundUsed)
 ouputFullPath = folderCreation(outPutPath, executionDate, BackgroundUsed.split(".")[0], allIconTypeNameMerged)
 
 # settings that will not change or get returned
-staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, ouputFullPath, replaceIconColor, replacementIconColor, iconSize, addBorderToIcon, BordersThickness, BorderColor)
-#                    0               1               2                      3                   4                   5                6           7              8                 9
+staticSettings = (outPutPath, executionDate, opacityLimitForReplacement, ouputFullPath, replaceIconColor, replacementIconColor, iconSize, addBorderToIcon, BordersThickness, BorderColor, minAlphaAllowed)
+#                    0               1               2                      3                   4                   5                6           7              8                 9               10
 
 # number of icon to make
 idIcon = 0
